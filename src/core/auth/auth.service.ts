@@ -7,7 +7,7 @@ import { Tokens } from "src/shared/types/tokens.type";
 import { DeleteTokenDTO } from "./dtos/delete-token.dto";
 import { RefreshTokenDTO } from "./dtos/refresh-token.dto";
 import { TokenService } from "src/shared/modules/jwt/token.service";
-import { GenerateTokenDTO } from "./dtos/generate-token.dto";
+import { JwtPayload } from "./interfaces/jwt-payload.inteface";
 
 @Injectable()
 export class AuthService {
@@ -55,28 +55,28 @@ export class AuthService {
 
         if (!user) throw new UnauthorizedException('Please, log in againnn');
 
-        const gToken = {
+        const payload = {
             userId: user.id,
             deviceId: dto.deviceId,
             name: user.name
         }
 
-        return this.generateAndSaveTokens(gToken, authEntity.userId);
+        return this.generateAndSaveTokens(payload, authEntity.userId);
     }
 
-    private async generateAndSaveTokens(dto: GenerateTokenDTO, userId: string): Promise<Tokens> {
+    private async generateAndSaveTokens(payload: JwtPayload, userId: string): Promise<Tokens> {
         const refreshToken = await this.tokenService.generateRefreshToken();
-        const accessToken = await this.tokenService.generateAccessToken(dto);
+        const accessToken = await this.tokenService.generateAccessToken(payload);
 
-        await this.authRepository.deleteToken(userId, dto.deviceId);
+        await this.authRepository.deleteToken(userId, payload.deviceId);
 
-        const cToken = {
+        const parameters = {
             userId: userId,
-            deviceId: dto.deviceId,
+            deviceId: payload.deviceId,
             refreshToken: await this.securityService.hashData(refreshToken)
         }
 
-        await this.authRepository.createToken(cToken);
+        await this.authRepository.createToken(parameters);
 
         return {
             access_token: accessToken,

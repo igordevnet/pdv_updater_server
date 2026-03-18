@@ -6,8 +6,12 @@ import { ConfigService } from "@nestjs/config";
 export class SecurityService {
   constructor(private configService: ConfigService) { }
 
-  async hashData(data: string): Promise<string> {
+  public async hashData(data: string): Promise<string> {
     return bcrypt.hash(data, await this.getSaltRounds());
+  }
+
+  public async compareData(plain: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(plain, hash);
   }
 
   private getSaltRounds(): number {
@@ -19,9 +23,5 @@ export class SecurityService {
     }
 
     return value;
-  }
-
-  async compareData(plain: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(plain, hash);
   }
 }

@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { GenerateTokenDTO } from 'src/core/auth/dtos/generate-token.dto';
+import { JwtPayload } from 'src/core/auth/interfaces/jwt-payload.inteface';
 
 @Injectable()
 export class TokenService {
@@ -11,7 +11,7 @@ export class TokenService {
     private readonly configService: ConfigService,
   ) { }
 
-  async generateAccessToken(dto: GenerateTokenDTO): Promise<string> {
+  async generateAccessToken(payload: JwtPayload): Promise<string> {
     const atSecret = this.configService.get<string>('AT_KEY');
 
     if (!atSecret) {
@@ -20,9 +20,9 @@ export class TokenService {
 
     return this.jwtService.signAsync(
       {
-        sub: dto.userId,
-        device: dto.deviceId,
-        name: dto.name,
+        sub: payload.userId,
+        device: payload.deviceId,
+        name: payload.name,
       },
       {
         expiresIn: 60 * 15,
