@@ -1,19 +1,20 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { UserRepository } from "./repositories/user.repository";
 import { CreateUserDTO } from "./dtos/create-user.dto";
-import { hashData } from "src/shared/modules/security/password.util";
 import { MessageI } from "src/shared/interfaces/message/message";
+import { SecurityService } from "src/shared/modules/security/security.service";
 
 @Injectable()
 export class UserService {
     public constructor(
-        private readonly userRepository: UserRepository
+        private readonly userRepository: UserRepository,
+        private readonly securityService: SecurityService
     ) { }
 
     public async createUser(dto: CreateUserDTO): Promise<MessageI> {
         await this.throwIfCnpjIsInUse(dto.cnpj);
 
-        dto.password = await hashData(dto.password);
+        dto.password = await this.securityService.hashData(dto.password);
 
         await this.userRepository.createUser(dto);
 

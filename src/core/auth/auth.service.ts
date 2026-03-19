@@ -2,13 +2,12 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { AuthRepository } from "./repositories/auth.repository";
 import { LoginDTO } from "./dtos/login.dto";
 import { UserService } from "../user/user.service";
-import { compareData, hashData } from "src/shared/modules/security/password.util";
+import { SecurityService } from "src/shared/modules/security/security.service";
 import { Tokens } from "src/shared/types/tokens.type";
 import { DeleteTokenDTO } from "./dtos/delete-token.dto";
 import { RefreshTokenDTO } from "./dtos/refresh-token.dto";
 import { TokenService } from "src/shared/modules/jwt/token.service";
-import { Hash } from "crypto";
-import { CreateTokenDTO } from "./dtos/create-token.dto";
+import { JwtPayload } from "./interfaces/jwt-payload.inteface";
 
 @Injectable()
 export class AuthService {
@@ -16,7 +15,8 @@ export class AuthService {
     public constructor(
         private readonly authRepository: AuthRepository,
         private readonly userService: UserService,
-        private readonly tokenService: TokenService
+        private readonly tokenService: TokenService,
+        private readonly securityService: SecurityService
     ) { }
 
     public async login(dto: LoginDTO): Promise<Tokens> {
@@ -24,7 +24,7 @@ export class AuthService {
 
         if (!user) throw new UnauthorizedException('Invalid credentials');
 
-        const passwordMatches = await compareData(dto.password, user.password);
+        const passwordMatches = await this.securityService.compareData(dto.password, user.password);
 
         if (!passwordMatches) throw new UnauthorizedException('Invalid credentials');
 
@@ -34,21 +34,7 @@ export class AuthService {
             name: dto.name
         }
 
-        const refreshToken = await this.tokenService.generateRefreshToken(tokenDto);
-        const accessToken = await this.tokenService.generateAccessToken(tokenDto);
-
-        const persistToken = {
-            userId: user.id,
-            deviceId: dto.deviceId,
-            refreshToken: await hashData(refreshToken)
-        }
-
-        await this.authRepository.createToken(persistToken);
-
-        return {
-            access_token: accessToken,
-            refresh_token: refreshToken
-        };
+        return this.generateAndSaveTokens(tokenDto, user.id);
     }
 
 
@@ -61,7 +47,7 @@ export class AuthService {
 
         if (!authEntity) throw new UnauthorizedException('Please, log in again');
 
-        const rtMatches = await compareData(dto.refreshToken, authEntity.refreshToken);
+        const rtMatches = await this.securityService.compareData(dto.refreshToken, authEntity.refreshToken);
 
         if (!rtMatches) throw new UnauthorizedException('Please, log in againn');
 
@@ -69,24 +55,28 @@ export class AuthService {
 
         if (!user) throw new UnauthorizedException('Please, log in againnn');
 
-        await this.authRepository.deleteToken(authEntity.userId, authEntity.deviceId);
-
-        const tokenDto = {
+        const payload = {
             userId: user.id,
             deviceId: dto.deviceId,
             name: user.name
         }
 
-        const refreshToken = await this.tokenService.generateRefreshToken(tokenDto);
-        const accessToken = await this.tokenService.generateAccessToken(tokenDto);
+        return this.generateAndSaveTokens(payload, authEntity.userId);
+    }
 
-        const persistToken = {
-            userId: user.id,
-            deviceId: dto.deviceId,
-            refreshToken: await hashData(refreshToken)
+    private async generateAndSaveTokens(payload: JwtPayload, userId: string): Promise<Tokens> {
+        const refreshToken = await this.tokenService.generateRefreshToken();
+        const accessToken = await this.tokenService.generateAccessToken(payload);
+
+        await this.authRepository.deleteToken(userId, payload.deviceId);
+
+        const parameters = {
+            userId: userId,
+            deviceId: payload.deviceId,
+            refreshToken: await this.securityService.hashData(refreshToken)
         }
 
-        await this.authRepository.createToken(persistToken);
+        await this.authRepository.createToken(parameters);
 
         return {
             access_token: accessToken,

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 
@@ -8,10 +9,15 @@ type JwtPayload = {
 }
 
 export class AtStrategy extends PassportStrategy(Strategy, 'jwt') {
-    public constructor () {
+
+
+    public constructor() {
+        const atSecret = process.env.AT_KEY;
+        if (!atSecret) throw new Error('Invalid AT_KEY env variable');
+
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            secretOrKey: 'at-secret'
+            secretOrKey: atSecret
         });
     }
 

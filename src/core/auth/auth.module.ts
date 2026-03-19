@@ -5,23 +5,23 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { AuthRepository } from "./repositories/auth.repository";
 import { UserModule } from "../user/user.module";
-import { AtStrategy } from "./strategies/at.strategy";
-import { RtStrategy } from "./strategies/rt.strategy";
+import { AtStrategy } from "../../shared/modules/jwt/strategies/at.strategy";
 import { TokenModule } from "src/shared/modules/jwt/token.module";
+import { SecurityModule } from "src/shared/modules/security/security.module";
 
 @Module({
     imports: [MongooseModule.forFeature([
         { name: Auth.name, schema: AuthSchema }
     ]),
         UserModule,
-        TokenModule
+        TokenModule,
+        SecurityModule
     ],
     controllers: [AuthController],
     providers: [
         AuthService,
         AuthRepository,
-        AtStrategy,
-        RtStrategy
+        AtStrategy
     ],
     exports: [AuthService]
 })

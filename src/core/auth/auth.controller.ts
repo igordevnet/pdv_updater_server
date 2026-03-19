@@ -1,9 +1,10 @@
-import { Body, Controller, HttpCode, HttpStatus, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Headers, HttpCode, HttpStatus, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { LoginDTO } from "./dtos/login.dto";
 import { AuthService } from "./auth.service";
 import { Tokens } from "src/shared/types/tokens.type";
 import { AuthGuard } from "@nestjs/passport";
 import { CurrentUser } from "src/shared/decorators/current-user.decorator";
+import { RefreshTokenDTO } from "./dtos/refresh-token.dto";
 
 @Controller('/auth')
 export class AuthController {
@@ -29,14 +30,8 @@ export class AuthController {
      }
 
     @Post('/refresh')
-    @UseGuards(AuthGuard ('jwt-refresh'))
     @HttpCode(HttpStatus.OK)
-    public refreshToken(@CurrentUser() user) {
-        const dto = {
-            deviceId: user.device,
-            refreshToken: user.refreshToken
-        }
-
+    public refreshToken(@Body() dto: RefreshTokenDTO) {
         return this.authService.refreshToken(dto);
      }
 }
