@@ -1,9 +1,7 @@
-import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Auth } from "../entities/auth.entity";
 import { Model } from "mongoose";
 import { CreateTokenDTO } from "../dtos/create-token.dto";
-import { DeleteTokenDTO } from "../dtos/delete-token.dto";
 
 export class AuthRepository {
 

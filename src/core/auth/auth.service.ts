@@ -2,11 +2,11 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { AuthRepository } from "./repositories/auth.repository";
 import { LoginDTO } from "./dtos/login.dto";
 import { UserService } from "../user/user.service";
-import { SecurityService } from "src/shared/modules/security/security.service";
-import { Tokens } from "src/shared/types/tokens.type";
+import { SecurityService } from "../../shared/modules/security/security.service";
+import { Tokens } from "../../shared/types/tokens.type";
 import { DeleteTokenDTO } from "./dtos/delete-token.dto";
 import { RefreshTokenDTO } from "./dtos/refresh-token.dto";
-import { TokenService } from "src/shared/modules/jwt/token.service";
+import { TokenService } from "../../shared/modules/jwt/token.service";
 import { JwtPayload } from "./interfaces/jwt-payload.inteface";
 
 @Injectable()
