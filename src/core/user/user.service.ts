@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { UserRepository } from "./repositories/user.repository";
 import { CreateUserDTO } from "./dtos/create-user.dto";
 import { MessageI } from "src/shared/interfaces/message/message";
-import { SecurityService } from "src/shared/modules/security/security.service";
+import { SecurityService } from "../../shared/modules/security/security.service";
 
 @Injectable()
 export class UserService {
