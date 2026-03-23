@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  pdv-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: pdv-updater-server
+    ports:
+      - "3000:3000" 
+    volumes:
+      - ./credentials.json:/usr/src/app/credentials.json
+      - ./.env:/usr/src/app/.env
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped 

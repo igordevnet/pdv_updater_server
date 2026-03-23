@@ -8,7 +8,6 @@ import { DeleteTokenDTO } from "./dtos/delete-token.dto";
 import { RefreshTokenDTO } from "./dtos/refresh-token.dto";
 import { TokenService } from "../../shared/modules/jwt/token.service";
 import { JwtPayload } from "./interfaces/jwt-payload.inteface";
-
 @Injectable()
 export class AuthService {
 
@@ -16,10 +15,11 @@ export class AuthService {
         private readonly authRepository: AuthRepository,
         private readonly userService: UserService,
         private readonly tokenService: TokenService,
-        private readonly securityService: SecurityService
+        private readonly securityService: SecurityService,
     ) { }
 
     public async login(dto: LoginDTO): Promise<Tokens> {
+
         const user = await this.userService.getUserByName(dto.name);
 
         if (!user) throw new UnauthorizedException('Invalid credentials');

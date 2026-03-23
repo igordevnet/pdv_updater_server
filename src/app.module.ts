@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { DatabaseConfig } from './config/db.config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -25,6 +26,9 @@ import { APP_GUARD } from '@nestjs/core';
         limit: 10
       }],
     }),
+    CacheModule.register({
+      isGlobal: true
+    })
   ],
   controllers: [],
   providers: [{

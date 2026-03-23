@@ -1,14 +1,18 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { UserRepository } from "./repositories/user.repository";
 import { CreateUserDTO } from "./dtos/create-user.dto";
 import { MessageI } from "src/shared/interfaces/message/message";
 import { SecurityService } from "../../shared/modules/security/security.service";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import type { Cache } from "cache-manager";
+import { UserDocument } from "./entities/user.entity";
 
 @Injectable()
 export class UserService {
     public constructor(
         private readonly userRepository: UserRepository,
-        private readonly securityService: SecurityService
+        private readonly securityService: SecurityService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) { }
 
     public async createUser(dto: CreateUserDTO): Promise<MessageI> {
@@ -18,7 +22,7 @@ export class UserService {
 
         await this.userRepository.createUser(dto);
 
-        return {message: "User created successfully."}
+        return { message: "User created successfully." }
     }
 
     private async throwIfCnpjIsInUse(cnpj: string) {
@@ -27,11 +31,33 @@ export class UserService {
         if (user) throw new BadRequestException("This CNPJ is already in use.");
     }
 
-    public getUserByName(name: string) {
-        return this.userRepository.getUserByName(name);
+    public async getUserByName(name: string) {
+        const cacheKey = `auth_user_${name}`;
+
+        const cachedUser = await this.cacheManager.get<UserDocument>(cacheKey);
+        if (cachedUser) {
+            return cachedUser;
+        }
+
+        const user = await this.userRepository.getUserByName(name);
+        if (!user) throw new NotFoundException("User not found");
+
+        await this.cacheManager.set(cacheKey, user, 300000);
+
+        return user;
     }
 
-    public getUserById(id: string) {
-        return this.userRepository.getUserById(id);
+    public async getUserById(id: string) {
+        const cacheKey = `auth_user_${id}`;
+        const cachedUser = await this.cacheManager.get<UserDocument>(cacheKey);
+        if (cachedUser) {
+            return cachedUser;
+        }
+
+        const user = await this.userRepository.getUserById(id);
+        if (!user) throw new NotFoundException("User not found");
+
+        await this.cacheManager.set(cacheKey, user, 300000);
+        return user;
     }
 }
