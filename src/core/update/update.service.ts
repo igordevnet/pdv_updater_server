@@ -1,22 +1,28 @@
 import { Injectable, StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
 import { join } from 'path';
+import winVersionInfo from 'win-version-info';
 
 
 @Injectable()
 export class UpdateService {
 
-    getLastestVersionFile(){
-        return {
-            version: '1.0.0',
-            filename: 'Pdv.exe'
-        };
+    private readonly filePath; 
+
+    public constructor() {
+        this.filePath = join(process.cwd(), 'files', 'pdv.exe');
     }
 
-    getLastestFile(): StreamableFile {
-        const filePath = join(process.cwd(), 'files', 'pdv.exe');
+    public getLastestVersionFile() {
 
-        const fileStream = createReadStream(filePath);
+        const info = winVersionInfo(this.filePath);
+        return info.FileVersion;  
+    }
+
+
+    public getLastestFile(): StreamableFile {
+
+        const fileStream = createReadStream(this.filePath);
 
         return new StreamableFile(fileStream, {
             type: 'application/octet-stream',
