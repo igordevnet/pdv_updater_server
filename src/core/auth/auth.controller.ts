@@ -7,12 +7,15 @@ import { CurrentUser } from "src/shared/decorators/current-user.decorator";
 import { RefreshTokenDTO } from "./dtos/refresh-token.dto";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { GoogleSheetsService } from "../../shared/modules/google/google-sheets.service";
+import { testDTO } from "./dtos/test.dto";
 
 @ApiTags('Authentication')
 @Controller('/auth')
 export class AuthController {
 
-    public constructor(private readonly authService: AuthService) { }
+    public constructor(private readonly authService: AuthService,
+        private readonly googleSheetsService: GoogleSheetsService
+    ) { }
 
     @Post('/local/signin')
     @ApiOperation({ summary: 'Authenticate a user and generate access and refresh tokens' })
@@ -46,5 +49,11 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     public refreshToken(@Body() dto: RefreshTokenDTO) {
         return this.authService.refreshToken(dto);
+    }
+
+    @Post('/test')
+    public test(@Body() payload: testDTO) {
+        console.log('Received payload:', payload);
+        this.googleSheetsService.updatePdvVersion(payload);
     }
 }
