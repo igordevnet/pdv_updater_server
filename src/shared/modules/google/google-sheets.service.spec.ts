@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { GoogleSheetsService } from "./google-sheets.service";
 import { ConfigService } from "@nestjs/config";
-import { SheetsPayload } from "./interfaces/sheets-payload.interface"; // Make sure to import this!
+import { SheetsPayload } from "./interfaces/sheets-payload.interface"; 
 
 describe('GoogleSheetsService', () => {
     let service: GoogleSheetsService;
