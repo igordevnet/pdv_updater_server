@@ -17,3 +17,5 @@ export class Auth {
 }
 
 export const AuthSchema = SchemaFactory.createForClass(Auth);
+
+AuthSchema.index({ deviceId: 1 }, { unique: true });

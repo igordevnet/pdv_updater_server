@@ -1,10 +1,12 @@
-import { Injectable, StreamableFile } from '@nestjs/common';
+import { Inject, Injectable, StreamableFile } from '@nestjs/common';
 import { createReadStream } from 'fs';
 import { join } from 'path';
 import winVersionInfo from 'win-version-info';
 import { DownloadFileDTO } from './dtos/download-file.dto';
 import { UpdateRepository } from './repositories/update.repository';
 import { GoogleSheetsService } from '../../shared/modules/google/google-sheets.service';
+import type { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 
 @Injectable()
@@ -14,22 +16,31 @@ export class UpdateService {
 
     public constructor(
         private readonly updateRepository: UpdateRepository, 
-        private readonly googleSheetsService: GoogleSheetsService
+        private readonly googleSheetsService: GoogleSheetsService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {
         this.filePath = join(process.cwd(), 'files', 'PdvFX.exe');
     }
 
-    public getLastestVersionFile(): string {
+    public async getLastestVersionFile() {
+        const cacheKey = 'version_file';
 
-        const info = winVersionInfo(this.filePath);
+        const cachedVersion = await this.cacheManager.get<string>(cacheKey);
+        if(cachedVersion) {
+            return cachedVersion;
+        }
+
+        const info = await winVersionInfo(this.filePath);
+        await this.cacheManager.set(cacheKey, info.FileVersion, 300000);
+
         return info.FileVersion;  
     }
 
     public async getLastestFile(dto: DownloadFileDTO, deviceName: string) {
 
-        const fileStream = await createReadStream(this.filePath);
+        const fileStream = createReadStream(this.filePath);
 
-        await this.saveAndExport(dto, deviceName)
+        this.saveAndExport(dto, deviceName);
 
         return new StreamableFile(fileStream, {
             type: 'application/octet-stream',

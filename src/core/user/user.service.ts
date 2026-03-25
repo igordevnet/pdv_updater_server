@@ -40,7 +40,7 @@ export class UserService {
         }
 
         const user = await this.userRepository.getUserByName(name);
-        if (!user) throw new NotFoundException("User not found");
+        if (!user) null;
 
         await this.cacheManager.set(cacheKey, user, 300000);
 
@@ -55,7 +55,7 @@ export class UserService {
         }
 
         const user = await this.userRepository.getUserById(id);
-        if (!user) throw new NotFoundException("User not found");
+        if (!user) null;
 
         await this.cacheManager.set(cacheKey, user, 300000);
         return user;

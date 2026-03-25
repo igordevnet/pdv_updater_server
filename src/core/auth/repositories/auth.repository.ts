@@ -10,9 +10,12 @@ export class AuthRepository {
         private readonly authModel: Model<Auth>,
     ) { }
 
-    public createToken(dto: CreateTokenDTO) {
-        const token = new this.authModel(dto);
-        token.save();
+    public async upsertToken(dto: CreateTokenDTO) {
+        await this.authModel.findOneAndUpdate(
+            { userId: dto.userId, deviceId: dto.deviceId },
+            { $set: dto },
+            { upsert: true, new: true }
+        ).exec();
     }
 
     public async deleteToken(userId: string, deviceId: string): Promise<void> {
@@ -20,7 +23,11 @@ export class AuthRepository {
     }
 
     public async getEntityByDevice(deviceId: string) {
-        return this.authModel.findOne({ deviceId }).exec();
+        return this.authModel
+            .findOne({ deviceId })
+            .select('_id userId deviceId') 
+            .lean()
+            .exec();
     }
 
 }

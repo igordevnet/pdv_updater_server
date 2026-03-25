@@ -19,7 +19,7 @@ export class AuthController {
     @Post('/local/signin')
     @ApiOperation({ summary: 'Authenticate a user and generate access and refresh tokens' })
     @ApiResponse({ status: 200, description: 'Tokens generated successfully' })
-    @ApiResponse({ status: 401, description: 'Invalid Credentials' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     @HttpCode(HttpStatus.OK)
     public login(@Body() dto: LoginDTO): Promise<Tokens> {
         return this.authService.login(dto);
@@ -29,7 +29,7 @@ export class AuthController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Logout a user by invalidating the refresh token' })
     @ApiResponse({ status: 200, description: 'Logout successful' })
-    @ApiResponse({ status: 401, description: 'Please, log in again' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     @UseGuards(AuthGuard('jwt'))
     @HttpCode(HttpStatus.OK)
     public async logout(@CurrentUser() user): Promise<void> {
@@ -44,7 +44,7 @@ export class AuthController {
     @Post('/refresh')
     @ApiOperation({ summary: 'Refresh access token using a valid refresh token' })
     @ApiResponse({ status: 200, description: 'Access token refreshed successfully' })
-    @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     @HttpCode(HttpStatus.OK)
     public refreshToken(@Body() dto: RefreshTokenDTO) {
         return this.authService.refreshToken(dto);
