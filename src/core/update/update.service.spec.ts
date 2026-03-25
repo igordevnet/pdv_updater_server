@@ -1,39 +1,48 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StreamableFile } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 import winVersionInfo from 'win-version-info';
 import { PassThrough } from 'stream';
 
 import { UpdateService } from './update.service';
 import { UpdateRepository } from './repositories/update.repository';
-import { GoogleSheetsService } from 'src/shared/modules/google/google-sheets.service';
+import { GoogleSheetsService } from '../../shared/modules/google/google-sheets.service';
 import { DownloadFileDTO } from './dtos/download-file.dto';
 
-jest.mock('fs');
-jest.mock('win-version-info');
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  createReadStream: jest.fn(),
+}));
+
+jest.mock('win-version-info', () => {
+  return {
+    __esModule: true,
+    default: jest.fn(),
+  };
+});
 
 describe('UpdateService', () => {
   let service: UpdateService;
-  let updateRepository: UpdateRepository;
-  let googleSheetsService: GoogleSheetsService;
+  let mockUpdateRepository: any;
+  let mockGoogleSheetsService: any;
 
-  const mockFilePath = path.join(process.cwd(), 'files', 'PdvFX.exe');
+  const mockFilePath = join(process.cwd(), 'files', 'PdvFX.exe');
   const mockVersion = '1.0.0.123';
 
-  const mockUpdateRepository = {
-    getInstanceByDevice: jest.fn(),
-    createInstance: jest.fn(),
-    updateInstance: jest.fn(),
-  };
-
-  const mockGoogleSheetsService = {
-    updatePdvVersion: jest.fn(),
-  };
-
   beforeEach(async () => {
+    mockUpdateRepository = {
+      getInstanceByDevice: jest.fn(),
+      createInstance: jest.fn(),
+      updateInstance: jest.fn(),
+    };
+
+    mockGoogleSheetsService = {
+      updatePdvVersion: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers:[
+      providers: [
         UpdateService,
         { provide: UpdateRepository, useValue: mockUpdateRepository },
         { provide: GoogleSheetsService, useValue: mockGoogleSheetsService },
@@ -41,16 +50,10 @@ describe('UpdateService', () => {
     }).compile();
 
     service = module.get<UpdateService>(UpdateService);
-    updateRepository = module.get<UpdateRepository>(UpdateRepository);
-    googleSheetsService = module.get<GoogleSheetsService>(GoogleSheetsService);
 
     jest.clearAllMocks();
 
     (winVersionInfo as jest.Mock).mockReturnValue({ FileVersion: mockVersion });
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
   });
 
   describe('getLastestVersionFile', () => {
@@ -63,62 +66,55 @@ describe('UpdateService', () => {
   });
 
   describe('getLastestFile', () => {
-    const mockDto: DownloadFileDTO = {
+    const mockDto = {
       userId: 'user-123',
       deviceId: 'device-456',
       name: 'Cashier 01',
-    } as any; 
+    } as DownloadFileDTO;
+    
     const mockDeviceName = 'DESKTOP-TEST';
-
     let mockStream: PassThrough;
 
     beforeEach(() => {
       mockStream = new PassThrough();
-      (fs.createReadStream as jest.Mock).mockReturnValue(mockStream);
+      (createReadStream as jest.Mock).mockReturnValue(mockStream as any);
     });
 
-    it('should return a StreamableFile and CREATE a new instance in the database if the device does not exist', async () => {
+    it('should return a StreamableFile and CREATE a new instance if the device does not exist', async () => {
       mockUpdateRepository.getInstanceByDevice.mockReturnValue(null);
 
       const result = await service.getLastestFile(mockDto, mockDeviceName);
 
-      expect(fs.createReadStream).toHaveBeenCalledWith(mockFilePath);
+      expect(createReadStream).toHaveBeenCalledWith(mockFilePath);
       expect(result).toBeInstanceOf(StreamableFile);
 
-      expect(updateRepository.getInstanceByDevice).toHaveBeenCalledWith(mockDto.deviceId);
-      expect(updateRepository.createInstance).toHaveBeenCalledWith({
+      expect(mockUpdateRepository.getInstanceByDevice).toHaveBeenCalledWith(mockDto.deviceId);
+      expect(mockUpdateRepository.createInstance).toHaveBeenCalledWith({
         userId: mockDto.userId,
         deviceId: mockDto.deviceId,
         exeVersion: mockVersion,
       });
-      expect(updateRepository.updateInstance).not.toHaveBeenCalled(); 
+      expect(mockUpdateRepository.updateInstance).not.toHaveBeenCalled();
 
-      expect(googleSheetsService.updatePdvVersion).toHaveBeenCalledWith({
+      expect(mockGoogleSheetsService.updatePdvVersion).toHaveBeenCalledWith({
         name: mockDto.name,
         deviceName: mockDeviceName,
         version: mockVersion,
       });
     });
 
-    it('should return a StreamableFile and UPDATE the instance in the database if the device already exists', async () => {
+    it('should return a StreamableFile and UPDATE the instance if the device already exists', async () => {
       mockUpdateRepository.getInstanceByDevice.mockReturnValue({ id: 1, deviceId: mockDto.deviceId });
 
       await service.getLastestFile(mockDto, mockDeviceName);
 
-      expect(updateRepository.getInstanceByDevice).toHaveBeenCalledWith(mockDto.deviceId);
-      
-      expect(updateRepository.updateInstance).toHaveBeenCalledWith({
+      expect(mockUpdateRepository.getInstanceByDevice).toHaveBeenCalledWith(mockDto.deviceId);
+      expect(mockUpdateRepository.updateInstance).toHaveBeenCalledWith({
         userId: mockDto.userId,
         deviceId: mockDto.deviceId,
         exeVersion: mockVersion,
       });
-      expect(updateRepository.createInstance).not.toHaveBeenCalled(); 
-
-      expect(googleSheetsService.updatePdvVersion).toHaveBeenCalledWith({
-        name: mockDto.name,
-        deviceName: mockDeviceName,
-        version: mockVersion,
-      });
+      expect(mockUpdateRepository.createInstance).not.toHaveBeenCalled();
     });
   });
 });

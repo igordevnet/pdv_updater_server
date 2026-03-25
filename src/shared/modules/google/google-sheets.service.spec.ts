@@ -43,13 +43,13 @@ describe('GoogleSheetsService', () => {
 
     describe('updatePdvVersion', () => {
         it('should update PDV version successfully if it already exists', async () => {
-            const payload: SheetsPayload = { name: 'test_name', deviceName: 'test_device_id', version: '1.0.0' };
+            const payload: SheetsPayload = { name: 'test_name', deviceName: 'test_device_name', version: '1.0.0' };
 
             mockSheetsApi.spreadsheets.values.get.mockResolvedValue({
                 data: {
                     values: [
                         ['Loja', 'Caixa'],
-                        ['test_name', 'test_device_id']
+                        ['test_name', 'test_device_name']
                     ],
                 },
             });
@@ -94,7 +94,7 @@ describe('GoogleSheetsService', () => {
         });
         
         it('should log error if the Google API fails', async () => {
-            const payload: SheetsPayload = { name: 'test_name', deviceName: 'test_device_id', version: '1.0.0' };
+            const payload: SheetsPayload = { name: 'test_name', deviceName: 'test_device_name', version: '1.0.0' };
             const errorMessage = 'API error';
 
             mockSheetsApi.spreadsheets.values.get.mockRejectedValue(new Error(errorMessage));
@@ -104,7 +104,7 @@ describe('GoogleSheetsService', () => {
             await service.updatePdvVersion(payload);
 
             expect(loggerSpy).toHaveBeenCalledWith(
-                expect.stringContaining(`[Google Sheets] Error updating PDV version for ${payload.name} (Device ID: ${payload.deviceName}): ${errorMessage}`)
+                expect.stringContaining(`[Google Sheets] Error updating PDV version for ${payload.name} (Device name: ${payload.deviceName}): ${errorMessage}`)
             );
         });
     });

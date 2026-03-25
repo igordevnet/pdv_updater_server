@@ -4,7 +4,7 @@ import { join } from 'path';
 import winVersionInfo from 'win-version-info';
 import { DownloadFileDTO } from './dtos/download-file.dto';
 import { UpdateRepository } from './repositories/update.repository';
-import { GoogleSheetsService } from 'src/shared/modules/google/google-sheets.service';
+import { GoogleSheetsService } from '../../shared/modules/google/google-sheets.service';
 
 
 @Injectable()
@@ -29,7 +29,7 @@ export class UpdateService {
 
         const fileStream = await createReadStream(this.filePath);
 
-        this.saveAndExport(dto, deviceName)
+        await this.saveAndExport(dto, deviceName)
 
         return new StreamableFile(fileStream, {
             type: 'application/octet-stream',
@@ -37,8 +37,8 @@ export class UpdateService {
         });
     }
 
-    private saveAndExport(dto: DownloadFileDTO, deviceName: string) {
-        const version = this.getLastestVersionFile();
+    private async saveAndExport(dto: DownloadFileDTO, deviceName: string) {
+        const version = await this.getLastestVersionFile();
         
         const payload = {
             userId: dto.userId,
@@ -46,13 +46,13 @@ export class UpdateService {
             exeVersion: version,
         };
 
-        const instanceCompare = this.updateRepository.getInstanceByDevice(dto.deviceId);
+        const instanceCompare = await this.updateRepository.getInstanceByDevice(dto.deviceId);
 
         if(!instanceCompare) {
-            this.updateRepository.createInstance(payload);
+            await this.updateRepository.createInstance(payload);
         } 
         else {
-            this.updateRepository.updateInstance(payload);
+            await this.updateRepository.updateInstance(payload);
         }
 
         const payloadSheet = {
@@ -61,6 +61,6 @@ export class UpdateService {
             version: version,
         };
 
-        this.googleSheetsService.updatePdvVersion(payloadSheet);
+        await this.googleSheetsService.updatePdvVersion(payloadSheet);
     }
 }

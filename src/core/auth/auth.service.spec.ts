@@ -54,6 +54,7 @@ describe('AuthService', () => {
                 name: 'mock_name',
                 password: 'plain_password',
                 deviceId: 'mock_device',
+                deviceName: 'mock_device_name'
             };
 
             const tokens = {
@@ -79,6 +80,7 @@ describe('AuthService', () => {
                 name: 'mock_name',
                 password: 'plain_password',
                 deviceId: 'mock_device',
+                deviceName: 'mock_device_name'
             };
 
             mockUserService.getUserByName.mockResolvedValue({ id: '1', name: 'mock_name', password: 'hashed_password' });
@@ -94,6 +96,7 @@ describe('AuthService', () => {
                 name: 'mock_name',
                 password: 'plain_password',
                 deviceId: 'mock_device',
+                deviceName: 'mock_device_name'
             };
 
             mockUserService.getUserByName.mockResolvedValue(null);
