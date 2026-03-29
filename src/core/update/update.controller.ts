@@ -27,7 +27,7 @@ export class UpdateController {
 
     @Get('/download')
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Authenticate a user and generate access and refresh tokens' })
+    @ApiOperation({ summary: 'Download the latest POS executable' })
     @ApiResponse({ status: 200, description: 'File sent successfully' })
     @ApiResponse({ status: 401, description: 'Please, log in again' })
     @ApiResponse({ status: 404, description: 'File not found' })

@@ -1,144 +1,130 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { UserService } from "./user.service";
-import { SecurityService } from "../../shared/modules/security/security.service";
-import { UserRepository } from "./repositories/user.repository";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Test, TestingModule } from '@nestjs/testing';
+import { UserService } from './user.service';
+import { UserRepository } from './repositories/user.repository';
+import { SecurityService } from '../../shared/modules/security/security.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { BadRequestException } from '@nestjs/common';
 
 const mockSecurityService = {
-    hashData: jest.fn(),
+  hashData: jest.fn(),
 };
 
 const mockUserRepository = {
-    getUserByCNPJ: jest.fn(),
-    createUser: jest.fn(),
-    getUserByName: jest.fn(),
-    getUserById: jest.fn(),
+  getUserByCNPJ: jest.fn(),
+  createUser: jest.fn(),
+  getUserByName: jest.fn(),
+  getUserById: jest.fn(),
 };
 
-const mockCache = {
-    get: jest.fn(),
-    set: jest.fn(),
-}
+const mockCacheManager = {
+  get: jest.fn(),
+  set: jest.fn(),
+};
 
 describe('UserService', () => {
-    let service: UserService;
+  let service: UserService;
 
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                UserService,
-                { provide: SecurityService, useValue: mockSecurityService },
-                { provide: UserRepository, useValue: mockUserRepository },
-                { provide: CACHE_MANAGER, useValue: mockCache },
-            ],
-        }).compile();
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UserService,
+        { provide: SecurityService, useValue: mockSecurityService },
+        { provide: UserRepository, useValue: mockUserRepository },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
+      ],
+    }).compile();
 
-        service = module.get<UserService>(UserService);
-        service['cacheManager'] = mockCache as any;
+    service = module.get<UserService>(UserService);
+    jest.clearAllMocks();
+  });
+
+  describe('createUser', () => {
+    const dto = { name: 'Main Store', password: 'plain_password', cnpj: '12.345.678/0001-90' };
+
+    it('should throw BadRequestException if CNPJ is already in use', async () => {
+      mockUserRepository.getUserByCNPJ.mockResolvedValue({ id: '1', cnpj: dto.cnpj });
+
+      await expect(service.createUser(dto)).rejects.toThrow(BadRequestException);
+      expect(mockUserRepository.getUserByCNPJ).toHaveBeenCalledWith(dto.cnpj);
+      expect(mockUserRepository.createUser).not.toHaveBeenCalled();
     });
 
-    afterEach(() => {
-        jest.clearAllMocks();
+    it('should create a user successfully and hash the password', async () => {
+      mockUserRepository.getUserByCNPJ.mockResolvedValue(null);
+      mockSecurityService.hashData.mockResolvedValue('hashed_password');
+
+      const result = await service.createUser({ ...dto });
+
+      expect(result).toEqual({ message: 'User created successfully.' });
+      expect(mockSecurityService.hashData).toHaveBeenCalledWith('plain_password');
+      expect(mockUserRepository.createUser).toHaveBeenCalledWith({
+        ...dto,
+        password: 'hashed_password',
+      });
+    });
+  });
+
+  describe('getUserByName', () => {
+    const name = 'Main Store';
+    const cacheKey = `auth_user_${name}`;
+    const expectedUser = { id: '1', name };
+
+    it('should return user from cache if it exists', async () => {
+      mockCacheManager.get.mockResolvedValue(expectedUser);
+
+      const result = await service.getUserByName(name);
+
+      expect(result).toEqual(expectedUser);
+      expect(mockCacheManager.get).toHaveBeenCalledWith(cacheKey);
+      expect(mockUserRepository.getUserByName).not.toHaveBeenCalled();
     });
 
-    describe('createUser', () => {
-        it('should create a user successfully', async () => {
-            const dto = { name: 'test_name', password: 'plain_password', cnpj: '12345678000195' };
+    it('should fetch user from repository and cache it if not in cache', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockUserRepository.getUserByName.mockResolvedValue(expectedUser);
 
-            mockUserRepository.getUserByCNPJ.mockResolvedValue(null);
+      const result = await service.getUserByName(name);
 
-            mockSecurityService.hashData.mockResolvedValue('hashed_password');
+      expect(result).toEqual(expectedUser);
+      expect(mockUserRepository.getUserByName).toHaveBeenCalledWith(name);
+      expect(mockCacheManager.set).toHaveBeenCalledWith(cacheKey, expectedUser, 300000);
+    });
+  });
 
-            const result = await service.createUser(dto);
+describe('getUserById', () => {
+    const id = '123';
+    const cacheKey = `auth_user_${id}`;
+    const expectedUser = { _id: id, name: 'Main Store' };
 
-            expect(result).toEqual({ message: "User created successfully." });
-            expect(mockUserRepository.getUserByCNPJ).toHaveBeenCalledWith('12345678000195');
-            expect(mockSecurityService.hashData).toHaveBeenCalledWith('plain_password');
+    it('should return user from cache if it exists', async () => {
+      mockCacheManager.get.mockResolvedValue(expectedUser);
 
-            expect(mockUserRepository.createUser).toHaveBeenCalledWith({
-                ...dto,
-                password: 'hashed_password'
-            });
-        });
+      const result = await service.getUserById(id);
+
+      expect(result).toEqual(expectedUser);
+      expect(mockUserRepository.getUserById).not.toHaveBeenCalled();
     });
 
-    describe('throwIfCnpjIsInUse', () => {
-        it('should throw an error if the CNPJ is already in use', async () => {
-            const cnpj = '12345678000195';
-            mockUserRepository.getUserByCNPJ.mockResolvedValue({ id: '1', name: 'test_name', cnpj });
+    it('should return null if user does not exist in repository', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockUserRepository.getUserById.mockResolvedValue(null);
 
-            expect(service['throwIfCnpjIsInUse'](cnpj)).rejects.toThrow('This CNPJ is already in use.');
-            expect(mockUserRepository.getUserByCNPJ).toHaveBeenCalledWith(cnpj);
-        });
+      const result = await service.getUserById(id);
+
+      expect(result).toBeNull();
     });
 
-    describe('getUserByName', () => {
-        it('should return a user by name when there is no user in cache', async () => {
-            const name = 'test_name';
-            const cacheKey = `auth_user_${name}`
+    it('should fetch user from repository, cache the secure version, and return user', async () => {
+      mockCacheManager.get.mockResolvedValue(null);
+      mockUserRepository.getUserById.mockResolvedValue(expectedUser);
 
-            const cachedUser = null;
+      const result = await service.getUserById(id);
 
-            const user = { id: '1', name, cnpj: '12345678000195' };
+      const secureUser = { _id: expectedUser._id, name: expectedUser.name };
 
-            mockCache.get.mockResolvedValue(cachedUser);
-            mockUserRepository.getUserByName.mockResolvedValue(user);
-
-            const result = await service.getUserByName(name);
-
-            expect(result).toEqual(user);
-            expect(mockUserRepository.getUserByName).toHaveBeenCalledWith(name);
-            expect(mockCache.get).toHaveBeenCalledWith(cacheKey);
-            expect(mockCache.set).toHaveBeenCalledWith(cacheKey, user, 300000);
-        });
-
-        it('should return a user by name when there is a user in cache', async () => {
-            const name = 'test_name';
-            const cacheKey = `auth_user_${name}`
-
-            const cachedUser = { id: '1', name, cnpj: '12345678000195' };
-
-            mockCache.get.mockResolvedValue(cachedUser);
-
-            const result = await service.getUserByName(name);
-
-            expect(result).toEqual(cachedUser);
-            expect(mockCache.get).toHaveBeenCalledWith(cacheKey);
-        });
+      expect(result).toEqual(expectedUser);
+      expect(mockUserRepository.getUserById).toHaveBeenCalledWith(id);
+      expect(mockCacheManager.set).toHaveBeenCalledWith(cacheKey, secureUser, 300000);
     });
-
-    describe('getUserById', () => {
-        it('should return a user by id when there is no user in cache', async () => {
-            const id = '1';
-            const cacheKey = `auth_user_${id}`
-
-            const cachedUser = null;
-
-            const user = { id, name: 'test_name', cnpj: '12345678000195' };
-
-            mockCache.get.mockResolvedValue(cachedUser);
-            mockUserRepository.getUserById.mockResolvedValue(user);
-
-            const result = await service.getUserById(id);
-
-            expect(result).toEqual(user);
-            expect(mockUserRepository.getUserById).toHaveBeenCalledWith(id);
-            expect(mockCache.get).toHaveBeenCalledWith(cacheKey);
-            expect(mockCache.set).toHaveBeenCalledWith(cacheKey, user, 300000);
-        });
-
-        it('should return a user by id when there is a user in cache', async () => {
-            const id = '1';
-            const cacheKey = `auth_user_${id}`
-
-            const cachedUser = { id, name: 'test_name', cnpj: '12345678000195' };
-
-            mockCache.get.mockResolvedValue(cachedUser);
-
-            const result = await service.getUserById(id);
-
-            expect(result).toEqual(cachedUser);
-            expect(mockCache.get).toHaveBeenCalledWith(cacheKey);
-        });
-    });
+  });
 });

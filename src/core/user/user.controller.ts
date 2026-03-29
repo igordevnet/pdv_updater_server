@@ -11,7 +11,7 @@ export class UserController {
 
     @Post()
     @ApiOperation({ summary: 'Create a new user' })
-    @ApiResponse({ status: 200, description: 'User created successfully' })
+    @ApiResponse({ status: 201, description: 'User created successfully' })
     @ApiResponse({ status: 400, description: 'Bad Request' })
     @HttpCode(HttpStatus.CREATED)
     public createUser(@Body() dto: CreateUserDTO){
