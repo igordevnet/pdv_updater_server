@@ -11,9 +11,20 @@ export class AuthRepository {
     ) { }
 
     public async upsertToken(dto: CreateTokenDTO) {
+
+        const updateData: any = {
+            refreshToken: dto.refreshToken
+        };
+
+        if (dto.userId) {
+            updateData.userId = dto.userId;
+            updateData.deviceId = dto.deviceId;
+            updateData.deviceName = dto.deviceName;
+        }
+
         await this.authModel.findOneAndUpdate(
-            { userId: dto.userId, deviceId: dto.deviceId },
-            { $set: dto },
+            { deviceId: dto.deviceId },
+            { $set: updateData },
             { upsert: true, new: true }
         ).exec();
     }
@@ -23,7 +34,7 @@ export class AuthRepository {
     }
 
     public async getEntityByDevice(deviceId: string) {
-       return this.authModel.findOne({ deviceId }).exec();
+        return this.authModel.findOne({ deviceId }).exec();
     }
 
 }

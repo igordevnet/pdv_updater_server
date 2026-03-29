@@ -26,7 +26,7 @@ export class TokenService {
       },
       {
         expiresIn: 60 * 15,
-        secret: process.env.AT_KEY,
+        secret: atSecret,
       },
     );
   }
