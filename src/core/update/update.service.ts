@@ -4,11 +4,12 @@ import { join } from 'path';
 import winVersionInfo from 'win-version-info';
 import { SaveUpdateDTO } from './dtos/save-update.dto';
 import { UpdateRepository } from './repositories/update.repository';
-import { GoogleSheetsService } from '../../shared/modules/google/google-sheets.service';
 import type { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Version } from 'src/shared/types/version-response.type';
 import { ConfigService } from '@nestjs/config';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 
 @Injectable()
@@ -18,9 +19,9 @@ export class UpdateService {
 
     public constructor(
         private readonly updateRepository: UpdateRepository,
-        private readonly googleSheetsService: GoogleSheetsService,
         private readonly configService: ConfigService,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+        @InjectQueue('google_sheets') private readonly googleQueue: Queue
     ) { 
         this.folderPath = this.configService.get<string>('FOLDER_PATH');
     }
@@ -93,7 +94,7 @@ export class UpdateService {
             cnpj: dto.cnpj
         };
 
-        await this.googleSheetsService.updatePdvVersion(payloadSheet);
+        await this.googleQueue.add('process', payloadSheet);
     }
 
     private getUrl(cnpj: string) {

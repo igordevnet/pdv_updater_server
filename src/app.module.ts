@@ -37,7 +37,11 @@ import { connection } from 'mongoose';
         connection: {
           host: config.get<string>('redis.host'),
           port: config.get<number>('redis.port')
-        }
+        },
+        defaultJobOptions: { 
+          attempts: 3, 
+          backoff: 2000
+        },
       })
     })
   ],

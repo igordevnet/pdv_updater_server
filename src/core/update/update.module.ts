@@ -4,13 +4,15 @@ import { UpdateService } from "./update.service";
 import { MongooseModule } from "@nestjs/mongoose";
 import { Update, UpdateSchema } from "./entities/update.entity";
 import { UpdateRepository } from "./repositories/update.repository";
-import { GoogleSheetsModule } from "../../shared/modules/google/google-sheets.module";
+import { BullModule } from "@nestjs/bullmq";
+import { QueueModule } from "src/shared/modules/queue/queue.module";
 
 @Module({
-    imports: [MongooseModule.forFeature([{
+    imports: [
+        MongooseModule.forFeature([{
         name: Update.name, schema: UpdateSchema
     }]),
-        GoogleSheetsModule,
+        QueueModule
     ],
     controllers: [UpdateController],
     providers: [
