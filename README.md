@@ -1,5 +1,4 @@
-# Defining the content for the English README.md
-readme_content_en = """# 🛒 POS Updater Server - NestJS API
+# 🛒 POS Updater Server - NestJS API
 
 <div align="center">
   <img src="https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white" />
