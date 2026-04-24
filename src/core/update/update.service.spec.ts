@@ -6,8 +6,9 @@ import { PassThrough } from 'stream';
 
 import { UpdateService } from './update.service';
 import { UpdateRepository } from './repositories/update.repository';
-import { GoogleSheetsService } from '../../shared/modules/google/google-sheets.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ConfigService } from '@nestjs/config';
+import { getQueueToken } from '@nestjs/bullmq';
 
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
@@ -22,10 +23,26 @@ jest.mock('win-version-info', () => ({
 describe('UpdateService', () => {
   let service: UpdateService;
   let mockUpdateRepository: any;
-  let mockGoogleSheetsService: any;
   let mockCacheManager: any;
 
   const mockVersion = '1.0.5';
+
+
+  const mockConfigService = {
+    get: jest.fn((key: string) => {
+      const map = {
+        GOOGLE_SHEET_ID: 'test_spreadsheet_id',
+        GOOGLE_SHEET_NAME: 'test_sheet_name',
+        FOLDER_PATH: 'test-folder',
+      };
+
+      return map[key];
+    }),
+  };
+
+  const mockQueue = {
+    add: jest.fn(),
+  };
 
   beforeEach(async () => {
     mockUpdateRepository = {
@@ -47,8 +64,9 @@ describe('UpdateService', () => {
       providers: [
         UpdateService,
         { provide: UpdateRepository, useValue: mockUpdateRepository },
-        { provide: GoogleSheetsService, useValue: mockGoogleSheetsService },
         { provide: CACHE_MANAGER, useValue: mockCacheManager },
+        { provide: ConfigService, useValue: mockConfigService },
+        { provide: getQueueToken('google_sheets'), useValue: mockQueue },
       ],
     }).compile();
 
@@ -113,11 +131,12 @@ describe('UpdateService', () => {
         exeVersion: mockVersion,
       });
       expect(mockUpdateRepository.updateInstance).not.toHaveBeenCalled();
-      
-      expect(mockGoogleSheetsService.updatePdvVersion).toHaveBeenCalledWith({
+
+      expect(mockQueue.add).toHaveBeenCalledWith('process', {
         name: mockDto.name,
         deviceName: mockDeviceName,
         version: mockVersion,
+        cnpj: mockDto.cnpj,
       });
     });
 
@@ -134,10 +153,11 @@ describe('UpdateService', () => {
       });
       expect(mockUpdateRepository.createInstance).not.toHaveBeenCalled();
 
-      expect(mockGoogleSheetsService.updatePdvVersion).toHaveBeenCalledWith({
+      expect(mockQueue.add).toHaveBeenCalledWith('process', {
         name: mockDto.name,
         deviceName: mockDeviceName,
         version: mockVersion,
+        cnpj: mockDto.cnpj,
       });
     });
   });

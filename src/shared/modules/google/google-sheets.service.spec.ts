@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { GoogleSheetsService } from "./google-sheets.service";
 import { ConfigService } from "@nestjs/config";
-import { SheetsPayload } from "./interfaces/sheets-payload.interface"; 
+import { SheetsPayload } from "./interfaces/sheets-payload.interface";
 
 describe('GoogleSheetsService', () => {
     let service: GoogleSheetsService;
@@ -34,7 +34,7 @@ describe('GoogleSheetsService', () => {
         }).compile();
 
         service = module.get<GoogleSheetsService>(GoogleSheetsService);
-        service['sheets'] = mockSheetsApi as any; 
+        service['sheets'] = mockSheetsApi as any;
     });
 
     afterEach(() => {
@@ -43,13 +43,18 @@ describe('GoogleSheetsService', () => {
 
     describe('updatePdvVersion', () => {
         it('should update PDV version successfully if it already exists', async () => {
-            const payload: SheetsPayload = { name: 'test_name', deviceName: 'test_device_name', version: '1.0.0' };
+            const payload: SheetsPayload = {
+                name: 'test_name',
+                cnpj: 'test_cnpj',
+                deviceName: 'test_device_name',
+                version: '1.0.0',
+            };
 
             mockSheetsApi.spreadsheets.values.get.mockResolvedValue({
                 data: {
                     values: [
-                        ['Loja', 'Caixa'],
-                        ['test_name', 'test_device_name']
+                        ['name', 'cnpj', 'deviceName'],
+                        ['test_name', 'test_cnpj', 'test_device_name'],
                     ],
                 },
             });
@@ -58,12 +63,12 @@ describe('GoogleSheetsService', () => {
 
             expect(mockSheetsApi.spreadsheets.values.get).toHaveBeenCalledWith({
                 spreadsheetId: 'test_spreadsheet_id',
-                range: `test_sheet_name!A:B`,
+                range: `test_sheet_name!A:C`,
             });
-            
+
             expect(mockSheetsApi.spreadsheets.values.update).toHaveBeenCalledWith({
                 spreadsheetId: 'test_spreadsheet_id',
-                range: `test_sheet_name!C2:D2`,
+                range: `test_sheet_name!D2:E2`,
                 valueInputOption: 'USER_ENTERED',
                 requestBody: {
                     values: [[payload.version, expect.any(String)]],
@@ -72,27 +77,38 @@ describe('GoogleSheetsService', () => {
         });
 
         it('should add new entry and sort if PDV version does not exist', async () => {
-            const payload: SheetsPayload = { name: 'new_name', deviceName: 'new_device_id', version: '1.0.0' };
+            const payload: SheetsPayload = {
+                name: 'test_name',
+                cnpj: 'test_cnpj',
+                deviceName: 'test_device_name',
+                version: '1.0.0',
+            };
 
             mockSheetsApi.spreadsheets.values.get.mockResolvedValue({
-                data: { values: [] } 
+                data: { values: [] }
             });
 
             await service.updatePdvVersion(payload);
 
             expect(mockSheetsApi.spreadsheets.values.append).toHaveBeenCalledWith({
                 spreadsheetId: 'test_spreadsheet_id',
-                range: `test_sheet_name!A:D`,
+                range: `test_sheet_name!A:E`,
                 valueInputOption: 'USER_ENTERED',
                 insertDataOption: 'INSERT_ROWS',
                 requestBody: {
-                    values: [[payload.name, payload.deviceName, payload.version, expect.any(String)]],
+                    values: [[
+                        payload.name,
+                        payload.cnpj,
+                        payload.deviceName,
+                        payload.version,
+                        expect.any(String),
+                    ]],
                 },
             });
 
             expect(mockSheetsApi.spreadsheets.batchUpdate).toHaveBeenCalled();
         });
-        
+
         it('should log error if the Google API fails', async () => {
             const payload: SheetsPayload = { name: 'test_name', deviceName: 'test_device_name', version: '1.0.0' };
             const errorMessage = 'API error';
@@ -104,7 +120,9 @@ describe('GoogleSheetsService', () => {
             await service.updatePdvVersion(payload);
 
             expect(loggerSpy).toHaveBeenCalledWith(
-                expect.stringContaining(`[Google Sheets] Error updating PDV version for ${payload.name} (Device name: ${payload.deviceName}): ${errorMessage}`)
+                expect.stringContaining(
+                    `[Google Sheets] Error updating PDV version for ${payload.name} - ${payload.cnpj}`
+                )
             );
         });
     });
@@ -115,7 +133,7 @@ describe('GoogleSheetsService', () => {
 
             expect(mockSheetsApi.spreadsheets.batchUpdate).toHaveBeenCalledWith({
                 spreadsheetId: 'test_spreadsheet_id',
-                requestBody: { 
+                requestBody: {
                     requests: [
                         {
                             sortRange: {

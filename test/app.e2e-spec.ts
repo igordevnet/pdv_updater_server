@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, HttpStatus } from '@nestjs/common';
+import { INestApplication, HttpStatus, StreamableFile } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from '../src/core/auth/auth.service';
 import { UserService } from '../src/core/user/user.service';
 import { UpdateService } from '../src/core/update/update.service';
+import { Readable } from 'stream';
 
 describe('POS API End-to-End Tests', () => {
   let app: INestApplication;
@@ -26,7 +27,12 @@ describe('POS API End-to-End Tests', () => {
 
   const mockUpdateService = {
     getLastestVersionFile: jest.fn().mockResolvedValue({ version: '1.0.5' }),
-    getLastestFile: jest.fn().mockResolvedValue(Buffer.from('fake-file-content')),
+    getLastestFile: jest.fn().mockReturnValue(
+    new StreamableFile(Readable.from(['fake-file-content']), {
+      type: 'application/octet-stream',
+      disposition: 'attachment; filename="PdvFX.exe"',
+    })
+  ),
     saveAndExport: jest.fn().mockResolvedValue({ success: true }),
   };
 
@@ -104,6 +110,14 @@ describe('POS API End-to-End Tests', () => {
         .get('/updates/check')
         .expect(HttpStatus.OK)
         .expect({ version: '1.0.5' });
+    });
+
+    it('GET /updates/download - Should return the exe file (200 OK)', () => {
+      return request(app.getHttpServer())
+        .get('/updates/download')
+        .expect(HttpStatus.OK)
+        .expect('Content-Type', /application\/octet-stream/)
+        .expect('Content-Disposition', /attachment; filename="PdvFX.exe"/);
     });
 
     it('POST /updates/save - Should register the download (200 OK)', () => {

@@ -80,29 +80,41 @@ describe('UserService', () => {
     });
 
     it('should fetch user from repository and cache it if not in cache', async () => {
+      const name = 'Main Store';
+      const cacheKey = `auth_user_${name}`;
+
+      const rawUser = { id: '1', name, cnpj: '123' };
+
       mockCacheManager.get.mockResolvedValue(null);
-      mockUserRepository.getUserByName.mockResolvedValue(expectedUser);
+      mockUserRepository.getUserByName.mockResolvedValue(rawUser);
 
       const result = await service.getUserByName(name);
 
-      expect(result).toEqual(expectedUser);
+      expect(result).toEqual(rawUser);
+
       expect(mockUserRepository.getUserByName).toHaveBeenCalledWith(name);
-      expect(mockCacheManager.set).toHaveBeenCalledWith(cacheKey, expectedUser, 300000);
+
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        cacheKey,
+        rawUser,
+        300000
+      );
     });
   });
 
-describe('getUserById', () => {
+  describe('getUserById', () => {
     const id = '123';
     const cacheKey = `auth_user_${id}`;
-    const expectedUser = { _id: id, name: 'Main Store' };
+
+    const rawUser = { id, name: 'Main Store', cnpj: '123' };
 
     it('should return user from cache if it exists', async () => {
-      mockCacheManager.get.mockResolvedValue(expectedUser);
+      mockCacheManager.get.mockResolvedValue(rawUser);
 
       const result = await service.getUserById(id);
 
-      expect(result).toEqual(expectedUser);
-      expect(mockUserRepository.getUserById).not.toHaveBeenCalled();
+      expect(result).toEqual(rawUser);
+      expect(mockCacheManager.get).toHaveBeenCalledWith(cacheKey);
     });
 
     it('should return null if user does not exist in repository', async () => {
@@ -114,17 +126,27 @@ describe('getUserById', () => {
       expect(result).toBeNull();
     });
 
-    it('should fetch user from repository, cache the secure version, and return user', async () => {
+    it('should fetch user, cache secure version, and return raw user', async () => {
       mockCacheManager.get.mockResolvedValue(null);
-      mockUserRepository.getUserById.mockResolvedValue(expectedUser);
+      mockUserRepository.getUserById.mockResolvedValue(rawUser);
 
       const result = await service.getUserById(id);
 
-      const secureUser = { _id: expectedUser._id, name: expectedUser.name };
+      const secureUser = {
+        id: rawUser.id,
+        name: rawUser.name,
+        cnpj: rawUser.cnpj,
+      };
 
-      expect(result).toEqual(expectedUser);
+      expect(result).toEqual(rawUser);
+
       expect(mockUserRepository.getUserById).toHaveBeenCalledWith(id);
-      expect(mockCacheManager.set).toHaveBeenCalledWith(cacheKey, secureUser, 300000);
+
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        cacheKey,
+        secureUser,
+        300000
+      );
     });
   });
 });

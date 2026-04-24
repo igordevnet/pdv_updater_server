@@ -22,7 +22,7 @@ export class UpdateService {
         private readonly configService: ConfigService,
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
         @InjectQueue('google_sheets') private readonly googleQueue: Queue
-    ) { 
+    ) {
         this.folderPath = this.configService.get<string>('FOLDER_PATH');
     }
 
@@ -94,7 +94,14 @@ export class UpdateService {
             cnpj: dto.cnpj
         };
 
-        await this.googleQueue.add('process', payloadSheet);
+        try {
+
+            this.googleQueue.add('process', payloadSheet).catch(err => {
+                console.error("Error trying to add the job into the queue:", err.message);
+            });
+        } catch (e) {
+            console.error("Redis error:", e);
+        }
     }
 
     private getUrl(cnpj: string) {
