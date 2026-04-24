@@ -1,65 +1,85 @@
-# 🛒 POS Updater Server - NestJS API
+# Defining the content for the English README.md
+readme_content_en = """# 🛒 POS Updater Server - NestJS API
 
-A robust, secure, and event-driven API built to manage Point of Sale (POS) system updates, ensuring cash registers are always running the latest version with strict hardware validation.
-    
+<div align="center">
+  <img src="https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/mongodb-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white" />
+  <img src="https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white" />
+</div>
+
+---
+
 ## 📋 About the Project
 
-This server acts as the central controller for the **POS Updater** (a C# desktop client). It solves the critical challenge of software distribution in retail environments, guaranteeing that cash registers download the latest system versions silently, autonomously, and securely. 
-
-By leveraging background queues, the API ensures ultra-fast response times for the physical terminals while handling third-party integrations asynchronously.
+This server is the core of the **POS Updater** ecosystem, responsible for managing Point of Sale system updates securely and automatically. It solves the critical challenge of keeping retail terminals updated without manual intervention, utilizing rigorous hardware validation and asynchronous processing to ensure high performance.
 
 ## ✨ Key Features
 
-- 🔒 **Hardware Authentication (Device ID):** Access and refresh tokens are strictly bound to the machine's physical ID, preventing unauthorized system usage on unregistered computers.
-- 🔄 **Token Management:** A complete authentication flow using JWT, ensuring the updater runs seamlessly in the background without requiring daily manual logins.
-- ⚡ **Event-Driven Background Jobs:** Uses Redis and BullMQ to decouple heavy third-party tasks. Google Sheets data synchronization happens asynchronously, keeping API response times under 20ms for the POS clients.
-- 📊 **Real-Time Dashboarding:** Automatically processes queue jobs to synchronize update logs directly into a Google Spreadsheet, providing the business team with a live view of POS versions across all stores.
-- 📦 **Update Traceability:** Logs exactly which machine (`deviceName`) downloaded which system version into the MongoDB database, generating a reliable audit trail.
-- 🛡️ **Clean Architecture:** Implemented using **Guards** for route protection, **Interceptors** for global logging, and custom **Decorators** (e.g., `@CurrentUser`).
+- 🔒 **Hardware Authentication (Device ID):** Access and refresh tokens are strictly bound to the machine's physical ID, preventing unauthorized API usage on unregistered terminals.
+- 🔄 **Token Management (JWT):** A complete authentication flow allowing the updater to run in the background without requiring daily manual logins.
+- ⚡ **Background Queues (BullMQ):** An event-driven architecture using Redis to process heavy tasks in the background (such as Google Sheets synchronization), keeping API response times under 20ms.
+- 📊 **Real-Time Dashboard:** Automatic synchronization with Google Sheets for a live view of the versions installed across all stores.
+- 📦 **Full Traceability:** Detailed logs in MongoDB documenting which terminal downloaded each version, creating a reliable audit trail.
 
-## 🛠️ Tech Stack
+## 💻 Tech Stack
 
-- **Backend:** NestJS, TypeScript, Node.js
-- **Database:** MongoDB (via Mongoose)
-- **Message Broker & Queues:** Redis, BullMQ
-- **External APIs:** Google Sheets API (Google Cloud Platform)
-- **Security:** Passport.js, JWT, bcrypt
-- **Documentation:** Swagger (OpenAPI)
+### ⚡ Back-end & Core
+<table>
+  <tr>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nestjs/nestjs-original.svg" width="48" height="48" alt="NestJS" />
+      <br>NestJS
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mongodb/mongodb-original.svg" width="48" height="48" alt="MongoDB" />
+      <br>MongoDB
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/redis/redis-original.svg" width="48" height="48" alt="Redis" />
+      <br>Redis
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" width="48" height="48" alt="TS" />
+      <br>TypeScript
+    </td>
+    <td align="center" width="110">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/googlecloud/googlecloud-original.svg" width="48" height="48" alt="GCP" />
+      <br>GCP Sheets
+    </td>
+  </tr>
+</table>
 
-## 🚀 How to Run the Project
+## 🚀 How to Run
 
 ### Prerequisites
-
-- Node.js (v18 or higher)
-- MongoDB running locally or via Atlas
-- Redis Server (v6.2+ recommended) running locally or via Docker
-- Google Cloud Service Account Credentials (for Sheets API)
+- Node.js (v18+)
+- MongoDB (Local or Atlas)
+- Redis Server (v6.2+)
+- Google Cloud Service Account Credentials
 
 ### Installation
-
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/YOUR_USERNAME/pos_updater_server.git](https://github.com/YOUR_USERNAME/pos_updater_server.git)
-   cd pos_updater_server
-Install the dependencies:Bashnpm install
-Set up the environment variables (create a .env file in the root directory):Snippet de códigoNODE_ENV=development
+   git clone [https://github.com/your-username/pos-updater-server.git](https://github.com/your-username/pos-updater-server.git)
+2. Install dependencies:
 
-# Database & Cache
-MONGO_URI=yourUri
+Bash
+npm install
+
+3. Set up the .env file in the root directory:
+
+NODE_ENV=development
+MONGO_URI=mongodb://localhost:27017/pos_updater
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
+SALTROUNDS=10
+AT_KEY=your_secret_at_key
+GOOGLE_SHEET_ID=your_sheet_id
+GOOGLE_SHEET_NAME=Sheet1
 
-# Security
-SALTROUNDS=yourSaltrounds
-AT_KEY=your256BitsAtkey
+4. Start the server:
 
-# Integrations
-GOOGLE_SHEET_ID=yourGoogleSheetId
-GOOGLE_SHEET_NAME=Sheet0
-Start the server:Bash# Development mode
+Bash
 npm run start:dev
 
-# Production mode
-npm run build
-npm run start:prod
-📡 Main API EndpointsFull documentation can be accessed via Swagger at the /api/docs route when the application is running.
+Developed to transform POS maintenance into an invisible and efficient process.
