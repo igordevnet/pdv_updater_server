@@ -6,7 +6,7 @@ export function swaggerConfig(app: INestApplication) {
       const config = new DocumentBuilder()
         .setTitle('POS Updater Api')
         .setDescription('Internal Documentation')
-        .setVersion('3.0.1')
+        .setVersion('3.1.0')
         .addBearerAuth()
         .build();
         

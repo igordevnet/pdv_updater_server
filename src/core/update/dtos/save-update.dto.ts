@@ -18,4 +18,8 @@ export class SaveUpdateDTO {
     @ApiProperty({ example: '35109230000178', description: 'The CNPJ of the user' })
     @IsCNPJ()
     cnpj: string;
+
+    @ApiProperty({ example: '3.0.0.52', description: 'The current version of the file on the machine' })
+    @IsString()
+    version: string;
 }
