@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { GoogleSheetsService } from "./google-sheets.service";
 import { ConfigService } from "@nestjs/config";
 import { SheetsPayload } from "./interfaces/sheets-payload.interface";
+import { ExeType } from "../../../shared/enums/exe.enum";
 
 describe('GoogleSheetsService', () => {
     let service: GoogleSheetsService;
@@ -48,6 +49,7 @@ describe('GoogleSheetsService', () => {
                 cnpj: 'test_cnpj',
                 deviceName: 'test_device_name',
                 version: '1.0.0',
+                exeType: ExeType.DOTMAT
             };
 
             mockSheetsApi.spreadsheets.values.get.mockResolvedValue({
@@ -82,6 +84,7 @@ describe('GoogleSheetsService', () => {
                 cnpj: 'test_cnpj',
                 deviceName: 'test_device_name',
                 version: '1.0.0',
+                exeType: ExeType.DOTMAT
             };
 
             mockSheetsApi.spreadsheets.values.get.mockResolvedValue({
@@ -92,7 +95,7 @@ describe('GoogleSheetsService', () => {
 
             expect(mockSheetsApi.spreadsheets.values.append).toHaveBeenCalledWith({
                 spreadsheetId: 'test_spreadsheet_id',
-                range: `test_sheet_name!A:E`,
+                range: `test_sheet_name!A:F`,
                 valueInputOption: 'USER_ENTERED',
                 insertDataOption: 'INSERT_ROWS',
                 requestBody: {
@@ -101,6 +104,7 @@ describe('GoogleSheetsService', () => {
                         payload.cnpj,
                         payload.deviceName,
                         payload.version,
+                        payload.exeType,
                         expect.any(String),
                     ]],
                 },

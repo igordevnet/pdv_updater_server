@@ -38,6 +38,7 @@ import { connection } from 'mongoose';
           host: config.get<string>('redis.host'),
           port: config.get<number>('redis.port')
         },
+        maxRetriesPerRequest: 3,
         defaultJobOptions: { 
           attempts: 3, 
           backoff: 2000

@@ -23,8 +23,9 @@ export class UpdateController {
     @UseGuards(AuthGuard('jwt'))
     public checkVersion(@CurrentUser() user): Promise<Version> {
         const cnpj = user.cnpj; 
+        const role = user.role;
 
-        return this.updateService.getLastestVersionFile(cnpj);
+        return this.updateService.getFileVersion(cnpj, role);
     };
 
     @Get('/download')
@@ -37,8 +38,9 @@ export class UpdateController {
     @UseGuards(AuthGuard('jwt'))
     public downloadFile(@CurrentUser() user) {
         const cnpj = user.cnpj;
+        const role = user.role;
 
-        return this.updateService.getLastestFile(cnpj);
+        return this.updateService.getLastestFile(cnpj, role);
     };
 
     @Post('/save')
@@ -53,8 +55,9 @@ export class UpdateController {
             userId: user.sub,
             deviceId: user.device,
             name: user.name,
-            cnpj: user.cnpj
+            cnpj: user.cnpj,
+            version: dto.version
         }
-        return this.updateService.saveAndExport(sheetDto, dto.deviceName);
+        return this.updateService.saveAndExport(sheetDto, dto.deviceName, user.role);
     };
 }

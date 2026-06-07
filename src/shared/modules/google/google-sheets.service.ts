@@ -43,6 +43,7 @@ export class GoogleSheetsService {
             const rows = getResponse.data.values || [];
             const rowIndex = rows.findIndex(row => row[0] === payload.name && row[1] === payload.cnpj && row[2] === payload.deviceName);
             const timeStamp = new Date().toLocaleDateString("pt-BR");
+            const safeTimeStamp = `'${timeStamp}`;
 
             if (rowIndex !== -1) {
 
@@ -50,10 +51,10 @@ export class GoogleSheetsService {
 
                 await this.sheets.spreadsheets.values.update({
                     spreadsheetId: this.spreadsheetId,
-                    range: `${this.sheetName}!D${excelRow}:E${excelRow}`,
+                    range: `${this.sheetName}!D${excelRow}:F${excelRow}`,
                     valueInputOption: 'USER_ENTERED',
                     requestBody: {
-                        values: [[payload.version, timeStamp]],
+                        values: [[payload.version, payload.exeType, safeTimeStamp]],
                     },
                 });
 
@@ -61,11 +62,11 @@ export class GoogleSheetsService {
             } else {
                 await this.sheets.spreadsheets.values.append({
                     spreadsheetId: this.spreadsheetId,
-                    range: `${this.sheetName}!A:E`,
+                    range: `${this.sheetName}!A:F`,
                     valueInputOption: 'USER_ENTERED',
                     insertDataOption: 'INSERT_ROWS',
                     requestBody: {
-                        values: [[payload.name, payload.cnpj, payload.deviceName, payload.version, timeStamp]],
+                        values: [[payload.name, payload.cnpj, payload.deviceName, payload.version, payload.exeType, safeTimeStamp]],
                     },
                 });
 
@@ -94,7 +95,7 @@ export class GoogleSheetsService {
                                     sortOrder: 'ASCENDING',
                                 },
                                 {
-                                    dimensionIndex: 1,
+                                    dimensionIndex: 3,
                                     sortOrder: 'ASCENDING',
                                 },
                             ],

@@ -32,7 +32,8 @@ export class AuthService {
             userId: user.id,
             deviceId: dto.deviceId,
             name: dto.name,
-            cnpj: user.cnpj
+            cnpj: user.cnpj,
+            exeType: dto.exeType
         }
 
         return this.generateAndSaveTokens(payload, dto.deviceName);
@@ -60,7 +61,8 @@ export class AuthService {
             userId: user.id,
             deviceId: dto.deviceId,
             name: user.name,
-            cnpj: user.cnpj
+            cnpj: user.cnpj,
+            exeType: dto.exeType
         }
 
         return this.generateAndSaveTokens(payload, authEntity.deviceName);

@@ -12,8 +12,7 @@ import { GoogleSheetsService } from "../../shared/modules/google/google-sheets.s
 @Controller('/auth')
 export class AuthController {
 
-    public constructor(private readonly authService: AuthService,
-        private readonly googleSheetsService: GoogleSheetsService
+    public constructor(private readonly authService: AuthService
     ) { }
 
     @Post('/local/signin')

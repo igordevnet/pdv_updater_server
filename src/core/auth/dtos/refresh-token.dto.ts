@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { IsEnum, IsString } from "class-validator";
+import { ExeType } from "src/shared/enums/exe.enum";
 
 export class RefreshTokenDTO {
 
@@ -10,4 +11,8 @@ export class RefreshTokenDTO {
     @ApiProperty({ example: 'refresh_token', description: 'The refresh token' })
     @IsString()
     refreshToken: string;
+
+    @ApiProperty({ example: 'PDV', description: 'The type of exe' })
+    @IsEnum(ExeType)
+    exeType: ExeType
 }
